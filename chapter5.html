@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Page Template</title>
+        <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+        <style type="text/css">
+          div.bar{
+            display: inline-block;
+            width:20px;
+            /*height: 75px; 이 값은 나중에 덮어쓰인다*/
+            background-color : teal;
+            margin-right: 2px;
+          }
+
+        </style>
+    </head>
+    <body>
+        <script type="text/javascript">
+        //D3를 활용한 여러분의 코드가 들어갈 위치
+
+        d3.csv("content.csv", function(error,data){
+          if (error) throw error;
+          console.log(data);
+        });
+
+        d3.select("body").selectAll("p")
+
+        var dataset = [6, 16,34,54,43,32,24];
+        /*for (var i=0; i<20; i++){
+          var newNumber = Math.random() * 30;
+          dataset.push(newNumber);
+        }*/
+        d3.select("body").selectAll("div")
+          .data(dataset)
+          .enter()
+          .append("div")
+          .attr("class", "bar")
+          .style("height", function(d){
+            var barHeight = d*5;
+            return barHeight + "px";
+          });
+
+        //차트를 멋있게 바꾸기
+        //폭과 높이
+        var w = 500;
+        var h = 300;
+        var barPadding = 3;
+        //svg 문서요소 생성
+        var svg = d3.select("body")
+                    .append("svg")
+                    .attr("width", w)
+                    .attr("height", h);
+        //</body> 태그 바로 앞에 <svg>를 삽입
+
+        svg.selectAll("rect")
+           .data(dataset)
+           .enter()
+           .append("rect") //rect가 필요한 속성 4가지
+           //.attr("x", 0) <- 막대가 겹침
+           .attr("x", function(d, i){
+             return i* (w/dataset.length); //i:index of data
+           })
+           .attr("y", function(d){
+             return h-d*4;
+           })
+           .attr("width", w/dataset.length-barPadding)
+           .attr("height", function(d){
+             return d*4;
+           })
+           .attr("fill", function(d){
+             return "rgb(0, 0, " + (d*10) + ")";
+           });
+        svg.selectAll("text")
+           .data(dataset)
+           .enter()
+           .append("text")
+           .text(function(d){
+             return d;
+           })
+           .attr("x", function(d, i){
+             return i*(w/dataset.length)+ (w/dataset.length-barPadding)/2;})
+           .attr("y", function(d) { return h - (d*4)+15;})
+           .attr("font-family", "sans-serif")
+           .attr("font-size", "11px")
+           .attr("fill", "white")
+           .attr("text-anchor", "middle");
+
+        </script>
+    </body>
+</html>

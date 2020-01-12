@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>D3: A flexible, scalable bar chart</title>
+		<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+		<style type="text/css">
+			/* No style rules here yet */
+		</style>
+	</head>
+	<body>
+		<p>Click on this text to update the chart with new data values.</p>
+		<script type="text/javascript">
+
+			//Width and height
+			var w = 600;
+			var h = 250;
+
+			var dataset = [ 5, 10, 13, 19, 21, 25, 22, 18, 15, 13,
+							11, 12, 15, 20, 18,20, 23, 24,11 ];
+// about scaleBand
+// https://observablehq.com/@d3/d3-scaleband?collection=@d3/d3-scale
+			// d3.scale.original() -> v4 d3.scaleBand()
+			//rangeBand() -> 치역의 양 끝 점을 전달인자로 받아서, 정의역의 개수를
+			//기준으로 그 수 만큼 chunk or band으로 조각낸다.
+			var xScale = d3.scaleBand()
+							.domain(d3.range(dataset.length))
+							.rangeRound([0, w])
+							.paddingInner(0.05); //대역 간 간격
+
+			var yScale = d3.scaleLinear()
+							.domain([0, d3.max(dataset)])
+							.range([0, h]);
+
+			//Create SVG element
+			var svg = d3.select("body")
+						.append("svg")
+						.attr("width", w)
+						.attr("height", h);
+
+			//Create bars
+			svg.selectAll("rect")
+			   .data(dataset)
+			   .enter() //데이터와 엮인 문서요소 생성을 위함.
+			   .append("rect")
+			   .attr("x", function(d, i) {
+			   		return xScale(i);
+			   })
+			   .attr("y", function(d) {
+			   		return h - yScale(d);
+			   })
+			   .attr("width", xScale.bandwidth()) //알아서 band 나눠주는거 오진다
+			   .attr("height", function(d) {
+			   		return yScale(d);
+			   })
+			   .attr("fill", function(d) {
+					return "rgb(0, 0, " + Math.round(d * 10) + ")";
+			   });
+
+			//Create labels
+			svg.selectAll("text")
+			   .data(dataset)
+			   .enter()
+			   .append("text")
+			   .text(function(d) {
+			   		return d;
+			   })
+			   .attr("text-anchor", "middle")
+			   .attr("x", function(d, i) {
+			   		return xScale(i) + xScale.bandwidth() / 2;
+			   })
+			   .attr("y", function(d) {
+			   		return h - yScale(d) + 14;
+			   })
+			   .attr("font-family", "sans-serif")
+			   .attr("font-size", "11px")
+			   .attr("fill", "yellow");
+
+			d3.select("p")
+				.on("click", function(){
+					//new data
+					var numValues = dataset.length;
+					dataset = [];
+					for(var i=0; i<numValues; i++){
+						var newNumber = Math.floor(Math.random()*25);
+						dataset.push(newNumber);
+					}
+				  //막대를 갱신하다.
+					svg.selectAll("rect")
+						 .data(dataset)
+						 .transition()
+						 //시각화 요소들이 서로 다른 시간에 transition
+						 .delay(function(d, i){
+							 return i*100;
+						 })
+						 .duration(1000)  // 1sec
+						 //.ease(d3.) //ㅅㅂ 책은 v3임
+						 .attr("y", function(d){
+							 return h - yScale(d);
+						 })
+						 .attr("height", function(d){
+							 return yScale(d);
+						 })
+						 .attr("fill", function(d){
+							 return "rgb(0, 0, "+(d*10)+")";
+						 });
+						 //label은 x,y만 갱신하면 된다.
+					svg.selectAll("text")
+						.data(dataset) //append(text)를 지워야 한다.
+						.transition()
+						.duration(1000)
+						.text(function(d) {
+							 return d;
+						})
+						.attr("x", function(d, i) {
+							 return xScale(i) + xScale.bandwidth() / 2;
+						})
+						.attr("y", function(d) {
+							 return h - yScale(d) + 14;
+						})
+				});//on click
+				//select
+				var bars = svg.selectAll("rect")
+				 							.data(dataset);
+        bars.enter()
+				    .append("rect")
+						.attr("x", w)
+						.attr("y", function(d){
+							return h-yScale(d);
+						})
+						.attr("width", xScale.rangeBand())
+						.attr("height", function(d){
+							return yScale(d);
+						})
+						.attr("fill", function(d){
+							return "rgb(0, 0, "+(d*10)+")";
+						});
+		</script>
+	</body>
+</html>

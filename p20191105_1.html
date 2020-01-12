@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>이벤트 리스너 삽입</title>
+		<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+		<style type="text/css">
+		/* css로 mouseover event
+			rect:hover{
+				fill:orange;
+			}
+			rect {
+				-moz-transition: all 0.3s;
+				-o-transition: all 0.3s;
+				-webkit-transition: all 0.3s;
+				transition: all 0.3s;
+			}*/
+			svg text{
+				pointer-events:none;
+			}
+		</style>
+	</head>
+	<body>
+		<p>클릭하면 지워짐!</p>
+		<script type="text/javascript">
+
+			//Width and height
+			var w = 600;
+			var h = 250;
+
+			var dataset = [ 5, 10, 13, 19, 21, 25, 22, 18, 15, 13,
+							11, 12, 15, 20, 18,20, 23, 24,11 ];
+// about scaleBand
+// https://observablehq.com/@d3/d3-scaleband?collection=@d3/d3-scale
+			// d3.scale.original() -> v4 d3.scaleBand()
+			//rangeBand() -> 치역의 양 끝 점을 전달인자로 받아서, 정의역의 개수를
+			//기준으로 그 수 만큼 chunk or band으로 조각낸다.
+			var xScale = d3.scaleBand()
+							.domain(d3.range(dataset.length))
+							.rangeRound([0, w])
+							.paddingInner(0.05); //대역 간 간격
+
+			var yScale = d3.scaleLinear()
+							.domain([0, d3.max(dataset)])
+							.range([0, h]);
+
+			//Create SVG element
+			var svg = d3.select("body")
+						.append("svg")
+						.attr("width", w)
+						.attr("height", h);
+
+			//Create bars
+			svg.selectAll("rect")
+			   .data(dataset)
+			   .enter() //데이터와 엮인 문서요소 생성을 위함.
+			   .append("rect")
+				 //define style
+				 .attr("x", function(d, i) {
+			   		return xScale(i);
+			   })
+			   .attr("y", function(d) {
+			   		return h - yScale(d);
+			   })
+			   .attr("width", xScale.bandwidth()) //알아서 band 나눠주는거 오진다
+			   .attr("height", function(d) {
+			   		return yScale(d);
+			   })
+			   .attr("fill", function(d) {
+					return "rgb(0, 0, " + Math.round(d * 10) + ")";
+			   })
+				 .on("click", function(d){ //selectAll이니까 어느 막대든 선택하면 시작.
+					 console.log(d);
+				 })
+				 .on("mouseover", function(){
+					 d3.select(this)
+					   .attr("fill", "orange");
+				 })
+				 .on("mouseout", function(d){
+					 d3.select(this)
+					   .transition()
+					   .duration(300)
+					   .attr("fill","rgb(0, 0, " + Math.round(d * 10) + ")" );
+				 });
+
+			//Create labels
+			svg.selectAll("text")
+			   .data(dataset)
+			   .enter()
+			   .append("text")
+			   .text(function(d) {
+			   		return d;
+			   })
+			   .attr("text-anchor", "middle")
+			   .attr("x", function(d, i) {
+			   		return xScale(i) + xScale.bandwidth() / 2;
+			   })
+			   .attr("y", function(d) {
+			   		return h - yScale(d) + 14;
+			   })
+			   .attr("font-family", "sans-serif")
+			   .attr("font-size", "11px")
+			   .attr("fill", "white");
+
+			d3.select("p")
+					.on("click", function(){
+						//delete one
+						dataset.shift();
+
+						//update scale domains
+						xScale.domain(d3.range(dataset.length));
+						yScale.domain([0, d3.max(dataset)]);
+
+						//select
+						var bars = svg.selectAll("rect")
+							 						.data(dataset);
+
+						//Enter
+						//부족한 막대를 만든다.
+						bars.enter()
+								.append("rect")
+								.attr("x", w)
+								.attr("y", function(d){
+									return h - yScale(d);
+								})
+								.attr("width", xScale.bandwidth())
+								.attr("height", function(d){
+									return yScale(d);
+								})
+								.attr("fill", function(d){
+									return "rgb(0, 0,"+Math.round(d*10)+" )";
+								})
+								.merge(bars)
+								.transition()
+								.duration(500)
+								.attr("x", function(d, i){
+									return xScale(i);
+								})
+								.attr("y", function(d){
+									return h - yScale(d);
+								})
+								.attr("width", xScale.bandwidth())
+								.attr("height", function(d){
+									return yScale(d);
+								});
+
+								//.merge(bars) 이렇게나 저렇게나 상관없는 듯.
+						bars.exit() //남는 선택물에 접근
+								.transition()
+							 	.duration(500)
+								.attr("x", w)
+								.remove(); //이전 트랜지션이 완전히 끝나기를 기다렸다가 DOM에서 그 문서요소를 제거
+
+
+						//후 스스로 코딩
+						var texts = svg.selectAll("text")
+													 .data(dataset);
+
+						texts.enter()
+						     .append("text")
+								 .text(function(d){
+									 return d;
+								 })
+								 .attr("text-anchor", "middle")
+								 .attr("x", function(d, i){
+									 return xScale(i) + xScale.bandwidth()/2;})
+								 .attr("y", function(d){
+									 return h-yScale(d)+14;
+								 })
+								 .attr("font-family", "sans-serif")
+								 .attr("font-size", "11px")
+								 .attr("fill", "white")
+
+						texts.transition()
+								 .duration(500)
+								 //재설정 대파티
+								 .attr("x", function(d, i){
+									 return xScale(i) + xScale.bandwidth()/2;
+								 })
+								 .attr("y", function(d){
+									 return h-yScale(d)+14;
+								 })
+								 .attr("width", xScale.bandwidth())
+								 .attr("height", function(d){
+									 return yScale(d);
+								 });
+
+						texts.exit()
+						 	   .transition()
+								 .duration(500)
+								 .attr("x", w)
+								 .remove();
+
+
+
+						});//end of onclick
+
+
+
+		</script>
+	</body>
+</html>
