@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<!-- Create a div where the graph will take place -->
+<body>
+    <div id="viz"></div>
+</body>
+
+<style>
+    #viz {
+        margin : 30px;
+    }
+
+    text {
+        fill : black;
+    }
+</style>
+
+<script>
+    let margin = {top : 30, right : 30, bottom : 30, left : 30},
+    width = 2000, height = 1000, size = 30, gap = 10;
+    let fontSizeY = 25, fontSizeX = 18;
+
+    //append the svg object to the body of the page
+    let svg = d3.select("#viz")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+        .attr("transform", `translate(${margin.left}, ${margin.top})`);
+    
+    //Labels of row and columns
+    let group = [ "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N"];
+    let months = [ "2019.06", "2019.07", "2019.08","2019.09","2019.10","2019.11","2019.12", 
+        "2020.01","2020.02","2020.03","2020.04","2020.05","2020.06","2020.07","2020.08","2020.09","2020.10","2020.11","2020.12",
+        "2021.01","2021.02","2021.03","2021.04","2021.05","2021.06","2021.07","2021.08","2021.09","2021.10","2021.11","2021.12",
+        "2022.01", "2022.02", "2022.03", "2022.04"];
+
+    //console.log(group.length);
+
+    //Build scales and axis;
+    let x = d3.scaleBand()
+        .range([0, size*months.length])
+        .domain(months)
+        .padding(0.01);
+    let xAxisGenerator = d3.axisTop(x);
+    xAxisGenerator.tickValues(x.domain().filter(function(d, i){
+        return !(i%3)
+    }))
+    let xAxis = svg.append("g")
+        .attr("transform", `translate(0,0)`)
+        .call(xAxisGenerator);
+    xAxis.selectAll(".tick text")
+        .attr("font-size", fontSizeX);
+    xAxis.select(".domain")
+        .attr("opacity", "0");
+
+    let y = d3.scaleBand()
+        .range([ (size+gap)*group.length, 0]) //이렇게 하지 말고 역으로 size값을 계산해야 함
+        .domain(group.reverse())
+        .padding(0.01);
+    let yAxis = svg.append("g")
+        .attr("transform", `translate(0,${-gap/2})`)
+        .call(d3.axisLeft(y));
+    yAxis.selectAll(".tick text")
+        .attr("font-size", fontSizeY);
+    yAxis.selectAll(".tick line")
+        .attr("opacity", "0");
+    yAxis.select(".domain")
+        .attr("opacity", "0");
+
+    let myColor = d3.scaleOrdinal()
+        .range(["white", "red", "yellow", "orange", "green", "blue"])
+        .domain([0, 1, 2, 3, 4, 5]); 
+
+    let data = d3.csv("./data.csv")
+        .then(function(data){
+            //console.log(data);
+
+            svg.selectAll()
+                .data(data, function(d) {return +d.value;})
+                .enter()
+                .append("rect")
+                    .attr("x", function(d) { return x(d.month)})
+                    .attr("y", function(d) { return y(d.group)})
+                    .attr("width", x.bandwidth())
+                    .attr("height", y.bandwidth()-gap)
+                    .style("fill", function(d) { return myColor(+d.value)})
+                    .style("stroke", "gray");
+        });
+    
+    // //group별로 테두리 넣기 
+    let border = svg.append("g")
+        .selectAll()
+        .data(group)
+        .enter()
+        .append("rect")
+            .attr("y", function(d) { return y(d)})
+            .attr("width", months.length*size)
+            .attr("height", size)
+            .style("stroke", "#444444")
+            .style("stroke-width", 2);
+</script>
